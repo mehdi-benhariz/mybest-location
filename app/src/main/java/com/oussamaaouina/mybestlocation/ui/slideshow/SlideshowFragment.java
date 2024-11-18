@@ -15,6 +15,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.oussamaaouina.mybestlocation.Config;
 import com.oussamaaouina.mybestlocation.JSONParser;
 import com.oussamaaouina.mybestlocation.Position;
@@ -35,12 +37,24 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import com.oussamaaouina.mybestlocation.databinding.FragmentSlideshowBinding;
+import com.oussamaaouina.mybestlocation.ui.home.HomeFragment;
+import com.oussamaaouina.mybestlocation.R;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 
 public class SlideshowFragment extends Fragment {
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private LocationManager locationManager;
     private LocationListener locationListener;
     private FragmentSlideshowBinding binding;
+    private GoogleMap mMap;
+    private SupportMapFragment mapFragment;
 
     private void checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(getActivity(),
@@ -81,7 +95,7 @@ public class SlideshowFragment extends Fragment {
 
             @Override
             public void onProviderDisabled(String provider) {
-                alert.dismiss();
+//                alert.dismiss();
 
 //                Toast.makeText(getActivity(), "Please enable GPS", Toast.LENGTH_SHORT).show();
             }
@@ -112,6 +126,59 @@ public class SlideshowFragment extends Fragment {
             binding.textLongitude.setText(String.format("%.6f", location.getLongitude()));
         }
     }
+    private void initializeMap() {
+        if (getChildFragmentManager().findFragmentById(R.id.map) == null) {
+            mapFragment = SupportMapFragment.newInstance();
+            getChildFragmentManager().beginTransaction()
+                    .replace(R.id.map, mapFragment)
+                    .commit();
+        } else
+            mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
+
+
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(new OnMapReadyCallback() {
+                @Override
+                public void onMapReady(GoogleMap googleMap) {
+                    mMap = googleMap;
+                    try {
+                        if (ContextCompat.checkSelfPermission(requireActivity(),
+                                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+                            mMap.setMyLocationEnabled(true);
+
+
+                        // Set up map click listener
+                        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+                            @Override
+                            public void onMapClick(LatLng latLng) {
+                                // Clear previous markers
+                                mMap.clear();
+
+                                // Add marker at selected location
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(latLng)
+                                        .title("Selected Location"));
+
+                                // Update TextViews
+                                if (binding != null) {
+                                    binding.textLatitude.setText(String.format("%.6f", latLng.latitude));
+                                    binding.textLongitude.setText(String.format("%.6f", latLng.longitude));
+                                }
+                            }
+                        });
+
+                        // Set default camera position
+                        LatLng defaultLocation = new LatLng(35.7595, -5.8340);
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 6f));
+                    } catch (SecurityException e) {
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+    }
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
@@ -122,7 +189,37 @@ public class SlideshowFragment extends Fragment {
         Button map = binding.mapBtn;
         Button back = binding.backBtn;
         Button mylocation = binding.mylocationBtn;
+        initializeMap();
 
+        // open map
+        map.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                View mapView = mapFragment != null ? mapFragment.getView() : null;
+                if (mapView != null) {
+                    if (mapView.getVisibility() == View.VISIBLE) {
+                        mapView.setVisibility(View.GONE);
+                    } else {
+                        mapView.setVisibility(View.VISIBLE);
+                    }
+                }
+            }
+        });
+
+
+        // go baaack
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                binding.textNumero.setText("");
+                binding.textPseudo.setText("");
+                binding.textLongitude.setText("");
+                binding.textLatitude.setText("");
+
+                getActivity().onBackPressed();
+
+            }
+        });
 
         mylocation.setOnClickListener(new View.OnClickListener() {
             @Override

@@ -2,6 +2,7 @@ package com.oussamaaouina.mybestlocation.ui.home;
 import com.oussamaaouina.mybestlocation.R;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -57,6 +58,7 @@ public class HomeFragment extends Fragment {
                 TextView numberView = view.findViewById(R.id.text_number);
                 Button deleteBtn = view.findViewById(R.id.btn_delete);
                 Button mapBtn = view.findViewById(R.id.btn_map);
+                Button msgBtn = view.findViewById(R.id.btn_sms);
 
                 coordsView.setText("Lat: " + pos.latitude + ", Long: " + pos.longitude);
                 numberView.setText("Number: " + pos.numero);
@@ -106,6 +108,21 @@ public class HomeFragment extends Fragment {
                     }
                 });
 
+                msgBtn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        try {
+
+                            SmsManager smsManager = SmsManager.getDefault();
+                            smsManager.sendTextMessage(pos.numero, null, "I'm at " + pos.latitude + ", " + pos.longitude, null, null);
+                        } catch (Exception e) {
+                            Log.d(e.getMessage(), "Error sending SMS: " + e.getMessage());
+                            Toast.makeText(getActivity(),
+                                    "Error sending SMS: " + e.getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+});
                 return view;
             }
         };
