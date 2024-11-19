@@ -1,6 +1,11 @@
 package com.oussamaaouina.mybestlocation.ui.home;
+import static androidx.core.content.ContextCompat.checkSelfPermission;
+
+import android.Manifest;
 import com.oussamaaouina.mybestlocation.MapsActivity;
 import com.oussamaaouina.mybestlocation.R;
+
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.telephony.SmsManager;
@@ -15,6 +20,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -109,17 +115,20 @@ public class HomeFragment extends Fragment {
                     @Override
                     public void onClick(View v) {
                         try {
+                            if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.SEND_SMS)== PackageManager.PERMISSION_GRANTED){
+                                requestPermissions(new String[]{Manifest.permission.SEND_SMS}, 1);
+                            }
 
                             SmsManager smsManager = SmsManager.getDefault();
                             smsManager.sendTextMessage(pos.numero, null, "I'm at " + pos.latitude + ", " + pos.longitude, null, null);
                         } catch (Exception e) {
-                            Log.d(e.getMessage(), "Error sending SMS: " + e.getMessage());
+                            Log.e(e.getMessage(), "Error sending SMS: " + e.getMessage());
                             Toast.makeText(getActivity(),
                                     "Error sending SMS: " + e.getMessage(),
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
-});
+                });
                 return view;
             }
         };
