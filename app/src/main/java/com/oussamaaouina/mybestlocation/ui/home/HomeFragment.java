@@ -1,4 +1,5 @@
 package com.oussamaaouina.mybestlocation.ui.home;
+import com.oussamaaouina.mybestlocation.MapsActivity;
 import com.oussamaaouina.mybestlocation.R;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -81,33 +82,29 @@ public class HomeFragment extends Fragment {
                 });
 
                 mapBtn.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        try {
-                            String uri = String.format("geo:%s,%s?q=%s,%s",
-                                    pos.latitude,
-                                    pos.longitude,
-                                    pos.latitude,
-                                    pos.longitude);
+    @Override
+    public void onClick(View v) {
+        Intent intent = new Intent(getActivity(), MapsActivity.class);
+        intent.putExtra("latitude", pos.latitude);
+        intent.putExtra("longitude", pos.longitude);
+        startActivityForResult(intent, 1);
+    }
+});
 
-                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
-                            intent.setPackage("com.google.android.apps.maps");
 
-                            if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
-                                startActivity(intent);
-                            } else {
-                                Toast.makeText(getActivity(),
-                                        "Google Maps is not installed",
-                                        Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (Exception e) {
-                            Toast.makeText(getActivity(),
-                                    "Error opening map: " + e.getMessage(),
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+                mapBtn.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+        Intent intent = new Intent(getActivity(), MapsActivity.class);
 
+
+        intent.putExtra("latitude", Double.valueOf(pos.latitude));
+        intent.putExtra("longitude", Double.valueOf(pos.longitude));
+
+
+        startActivity(intent);
+    }
+});
                 msgBtn.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {

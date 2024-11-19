@@ -1,5 +1,8 @@
 package com.oussamaaouina.mybestlocation.ui.slideshow;
 
+import static android.content.Intent.getIntent;
+
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,24 +14,22 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.oussamaaouina.mybestlocation.Config;
 import com.oussamaaouina.mybestlocation.JSONParser;
-import com.oussamaaouina.mybestlocation.Position;
+import com.oussamaaouina.mybestlocation.MapsActivity;
 import com.oussamaaouina.mybestlocation.databinding.FragmentSlideshowBinding;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
 
-import kotlin.reflect.KParameter;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -37,19 +38,14 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import com.oussamaaouina.mybestlocation.databinding.FragmentSlideshowBinding;
-import com.oussamaaouina.mybestlocation.ui.home.HomeFragment;
-import com.oussamaaouina.mybestlocation.R;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+
 
 
 public class SlideshowFragment extends Fragment {
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
+    private double receivedLatitude;
+    private double receivedLongitude;
+
     private LocationManager locationManager;
     private LocationListener locationListener;
     private FragmentSlideshowBinding binding;
@@ -126,64 +122,8 @@ public class SlideshowFragment extends Fragment {
             binding.textLongitude.setText(String.format("%.6f", location.getLongitude()));
         }
     }
-    private void toggleMapVisibility() {
-        if (binding != null) {
-            View mapContainer = binding.mapContainer;
-            if (mapContainer.getVisibility() == View.VISIBLE) {
-                mapContainer.setVisibility(View.GONE);
-                binding.mapBtn.setText("Show Map");
-            } else {
-                mapContainer.setVisibility(View.VISIBLE);
-                binding.mapBtn.setText("Hide Map");
-
-                // Initialize map when showing
-                if (mMap == null && mapFragment != null) {
-                    mapFragment.getMapAsync(new OnMapReadyCallback() {
-                        @Override
-                        public void onMapReady(@NonNull GoogleMap googleMap) {
-                            mMap = googleMap;
-                            setupMap();
-                        }
-                    });
-                }
-            }
-        }
-    }
-    private void setupMap() {
-        try {
-            if (getActivity() != null && ContextCompat.checkSelfPermission(getActivity(),
-                    Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                mMap.setMyLocationEnabled(true);
-                mMap.getUiSettings().setZoomControlsEnabled(true);
-                mMap.getUiSettings().setCompassEnabled(true);
-            }
-
-            mMap.setOnMapClickListener(latLng -> {
-                mMap.clear();
-                mMap.addMarker(new MarkerOptions()
-                        .position(latLng)
-                        .title("Selected Location"));
-                updateLocationTexts(latLng.latitude, latLng.longitude);
-            });
-
-            // Set default location (Tangier, Morocco)
-            LatLng defaultLocation = new LatLng(35.7595, -5.8340);
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 12f));
-        } catch (SecurityException e) {
-            Log.e("MapError", "Error setting up map: " + e.getMessage());
-        }
-    }
 
 
-    private void initializeMap() {
-        mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
-        if (mapFragment == null) {
-            mapFragment = SupportMapFragment.newInstance();
-            getChildFragmentManager().beginTransaction()
-                    .replace(R.id.map, mapFragment)
-                    .commit();
-        }
-    }
     private void handleBackPress() {
         if (binding != null) {
             clearFields();
@@ -221,15 +161,9 @@ public class SlideshowFragment extends Fragment {
         map.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                View mapView = mapFragment != null ? mapFragment.getView() : null;
-                if (mapView != null) {
-                    if (mapView.getVisibility() == View.VISIBLE) {
-                        mapView.setVisibility(View.GONE);
-                    } else {
-                        mapView.setVisibility(View.VISIBLE);
-                    }
-                }
+               startActivityForResult(new Intent(getActivity(), MapsActivity.class), 1);
             }
+
         });
 
 
@@ -268,7 +202,6 @@ public class SlideshowFragment extends Fragment {
                 u.execute();
             }
         });
-        initializeMap();
 
         return root;
     }
@@ -280,6 +213,16 @@ public class SlideshowFragment extends Fragment {
     }
     AlertDialog alert;
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (data != null) {
+            receivedLatitude = data.getDoubleExtra("latitude", 0.0);
+            receivedLongitude = data.getDoubleExtra("longitude", 0.0);
+
+            updateLocationTexts(receivedLatitude, receivedLongitude);
+        }
+    }
     class Upload extends AsyncTask {
         HashMap<String,String> params;
         public Upload(HashMap<String,String> params) {
