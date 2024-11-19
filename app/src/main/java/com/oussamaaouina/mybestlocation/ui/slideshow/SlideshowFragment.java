@@ -126,57 +126,84 @@ public class SlideshowFragment extends Fragment {
             binding.textLongitude.setText(String.format("%.6f", location.getLongitude()));
         }
     }
+    private void toggleMapVisibility() {
+        if (binding != null) {
+            View mapContainer = binding.mapContainer;
+            if (mapContainer.getVisibility() == View.VISIBLE) {
+                mapContainer.setVisibility(View.GONE);
+                binding.mapBtn.setText("Show Map");
+            } else {
+                mapContainer.setVisibility(View.VISIBLE);
+                binding.mapBtn.setText("Hide Map");
+
+                // Initialize map when showing
+                if (mMap == null && mapFragment != null) {
+                    mapFragment.getMapAsync(new OnMapReadyCallback() {
+                        @Override
+                        public void onMapReady(@NonNull GoogleMap googleMap) {
+                            mMap = googleMap;
+                            setupMap();
+                        }
+                    });
+                }
+            }
+        }
+    }
+    private void setupMap() {
+        try {
+            if (getActivity() != null && ContextCompat.checkSelfPermission(getActivity(),
+                    Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                mMap.setMyLocationEnabled(true);
+                mMap.getUiSettings().setZoomControlsEnabled(true);
+                mMap.getUiSettings().setCompassEnabled(true);
+            }
+
+            mMap.setOnMapClickListener(latLng -> {
+                mMap.clear();
+                mMap.addMarker(new MarkerOptions()
+                        .position(latLng)
+                        .title("Selected Location"));
+                updateLocationTexts(latLng.latitude, latLng.longitude);
+            });
+
+            // Set default location (Tangier, Morocco)
+            LatLng defaultLocation = new LatLng(35.7595, -5.8340);
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 12f));
+        } catch (SecurityException e) {
+            Log.e("MapError", "Error setting up map: " + e.getMessage());
+        }
+    }
+
+
     private void initializeMap() {
-        if (getChildFragmentManager().findFragmentById(R.id.map) == null) {
+        mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
+        if (mapFragment == null) {
             mapFragment = SupportMapFragment.newInstance();
             getChildFragmentManager().beginTransaction()
                     .replace(R.id.map, mapFragment)
                     .commit();
-        } else
-            mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
-
-
-        if (mapFragment != null) {
-            mapFragment.getMapAsync(new OnMapReadyCallback() {
-                @Override
-                public void onMapReady(GoogleMap googleMap) {
-                    mMap = googleMap;
-                    try {
-                        if (ContextCompat.checkSelfPermission(requireActivity(),
-                                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-                            mMap.setMyLocationEnabled(true);
-
-
-                        // Set up map click listener
-                        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-                            @Override
-                            public void onMapClick(LatLng latLng) {
-                                // Clear previous markers
-                                mMap.clear();
-
-                                // Add marker at selected location
-                                mMap.addMarker(new MarkerOptions()
-                                        .position(latLng)
-                                        .title("Selected Location"));
-
-                                // Update TextViews
-                                if (binding != null) {
-                                    binding.textLatitude.setText(String.format("%.6f", latLng.latitude));
-                                    binding.textLongitude.setText(String.format("%.6f", latLng.longitude));
-                                }
-                            }
-                        });
-
-                        // Set default camera position
-                        LatLng defaultLocation = new LatLng(35.7595, -5.8340);
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 6f));
-                    } catch (SecurityException e) {
-                        e.printStackTrace();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
+        }
+    }
+    private void handleBackPress() {
+        if (binding != null) {
+            clearFields();
+            if (getActivity() != null) {
+                getActivity().onBackPressed();
+            }
+        }
+    }
+    private void clearFields() {
+        if (binding != null) {
+            binding.textNumero.setText("");
+            binding.textPseudo.setText("");
+            binding.textLongitude.setText("");
+            binding.textLatitude.setText("");
+        }
+    }
+    private void updateLocationTexts(double latitude, double longitude) {
+        if (binding != null) {
+            binding.textLatitude.setText(String.format("%.6f", latitude));
+            binding.textLongitude.setText(String.format("%.6f", longitude));
         }
     }
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -189,7 +216,6 @@ public class SlideshowFragment extends Fragment {
         Button map = binding.mapBtn;
         Button back = binding.backBtn;
         Button mylocation = binding.mylocationBtn;
-        initializeMap();
 
         // open map
         map.setOnClickListener(new View.OnClickListener() {
@@ -242,6 +268,8 @@ public class SlideshowFragment extends Fragment {
                 u.execute();
             }
         });
+        initializeMap();
+
         return root;
     }
 
