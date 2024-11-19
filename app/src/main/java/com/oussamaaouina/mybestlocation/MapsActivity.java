@@ -29,13 +29,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
          binding = ActivityMapsBinding.inflate(getLayoutInflater());
          setContentView(binding.getRoot());
-         Intent intent = getIntent();
-         if (intent != null) {
 
-           receivedLatitude = intent.getDoubleExtra("latitude", 0.0);
-            receivedLongitude = intent.getDoubleExtra("longitude", 0.0);
-
-     }
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -55,8 +49,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        Intent intent = getIntent();
+        if (intent != null) {
+
+            receivedLatitude = intent.getDoubleExtra("latitude", 0.0);
+            receivedLongitude = intent.getDoubleExtra("longitude", 0.0);
+            Log.d("MapsActivity", "Received coordinates: " + receivedLatitude + ", " + receivedLongitude);
+        }
         if (receivedLatitude != 0.0 && receivedLongitude != 0.0) {
             // Create a LatLng object with the received coordinates
+            receivedLatitude = (int) intent.getDoubleExtra("latitude", 0.0);
+            receivedLongitude = (int) intent.getDoubleExtra("longitude", 0.0);
             LatLng receivedLocation = new LatLng(receivedLatitude, receivedLongitude);
 
             // Add a marker at the received location
@@ -79,7 +82,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.clear();
                 mMap.addMarker(new MarkerOptions().position(latLng).title("Selected Location"));
 
-                // Create an intent to send back the location
                 Intent returnIntent = new Intent();
                 returnIntent.putExtra("latitude", latLng.latitude);
                 returnIntent.putExtra("longitude", latLng.longitude);
